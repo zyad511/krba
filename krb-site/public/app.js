@@ -10,17 +10,17 @@ function copyLegacy(text) {
 async function loadPopular() {
   const r = await fetch("/api/search");
   const d = await r.json();
-  renderScripts(d.results, "🔥 السكربتات الشائعة");
+  render(d.results, "🔥 السكربتات الشائعة");
 }
 
 async function searchScripts() {
   const q = searchInput.value.trim();
   const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
   const d = await r.json();
-  renderScripts(d.results, "🔍 نتائج البحث");
+  render(d.results, "🔍 نتائج البحث");
 }
 
-function renderScripts(list, title) {
+function render(list, title) {
   results.innerHTML = `<h2 class="section">${title}</h2>`;
 
   if (!list.length) {
@@ -38,11 +38,11 @@ function renderScripts(list, title) {
     card.innerHTML = `
       ${s.image ? `<img src="${s.image}">` : ""}
       <div class="content">
-        <h3>${s.title || "بدون عنوان"}</h3>
-        <p>${s.description || "لا يوجد وصف"}</p>
+        <h3>${s.title_ar || s.title}</h3>
+        <p>${s.description_ar || "لا يوجد وصف"}</p>
 
         <div class="meta">
-          <span>${s.key ? "🔑 Key" : "✅ No Key"}</span>
+          <span>${s.key ? "🔑 بمفتاح" : "✅ بدون مفتاح"}</span>
           <span>👁 ${s.views || 0}</span>
         </div>
 
@@ -69,5 +69,4 @@ function renderScripts(list, title) {
   });
 }
 
-// 🔥 تحميل الشائع أول ما يفتح الموقع
 window.onload = loadPopular;
