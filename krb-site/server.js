@@ -11,10 +11,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, "public"), { maxAge: 0 }));
 
-async function translate(text) {
+async function translate(text, to = "ar") {
+  if (!text) return "";
   try {
     const url =
-      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" +
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${to}&dt=t&q=` +
       encodeURIComponent(text);
     const r = await fetch(url);
     const d = await r.json();
@@ -24,40 +25,44 @@ async function translate(text) {
   }
 }
 
-/* RAW */
+async function translateScript(s) {
+  return {
+    ...s,
+    title_ar: await translate(s.title),
+    description_ar: await translate(s.description)
+  };
+}
+
 app.get("/api/raw", async (req, res) => {
   try {
     const r = await fetch(req.query.url);
-    const t = await r.text();
-    res.send(t);
+    res.send(await r.text());
   } catch {
     res.send("");
   }
 });
 
-/* SEARCH + POPULAR */
 app.get("/api/search", async (req, res) => {
   try {
     const q = req.query.q || "";
-
     let scripts = [];
+
     for (let i = 1; i <= 8; i++) {
       const r = await fetch(`https://rscripts.net/api/v2/scripts?page=${i}`);
       const d = await r.json();
       if (Array.isArray(d.scripts)) scripts.push(...d.scripts);
     }
 
-    // 🔥 إذا ما فيه بحث → سكربتات شائعة
+    // 🔥 سكربتات شائعة
     if (!q.trim()) {
       scripts.sort((a, b) => (b.views || 0) - (a.views || 0));
-      return res.json({
-        mode: "popular",
-        results: scripts.slice(0, 24)
-      });
+      const top = scripts.slice(0, 24);
+      const translated = await Promise.all(top.map(translateScript));
+      return res.json({ results: translated });
     }
 
-    // 🔍 بحث عادي
-    const en = await translate(q);
+    // 🔍 بحث
+    const en = await translate(q, "en");
 
     let results = scripts.filter(s =>
       (s.title || "").toLowerCase().includes(en.toLowerCase()) ||
@@ -65,15 +70,14 @@ app.get("/api/search", async (req, res) => {
     );
 
     results.sort((a, b) => (b.views || 0) - (a.views || 0));
+    results = results.slice(0, 24);
 
-    res.json({
-      mode: "search",
-      results: results.slice(0, 24)
-    });
+    const translated = await Promise.all(results.map(translateScript));
+    res.json({ results: translated });
 
   } catch {
     res.json({ results: [] });
   }
 });
 
-app.listen(PORT, () => console.log("✅ Server Running"));
+app.listen(PORT, () => console.log("✅ Server running"));
