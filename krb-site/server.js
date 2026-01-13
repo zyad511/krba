@@ -15,16 +15,14 @@ app.use(express.json());
 /* =======================
    ترجمة Google (مستقرة)
 ======================= */
-async function translateToEnglish(text) {
+async function translate(text, to = "en") {
   try {
     const url =
-      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" +
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${to}&dt=t&q=` +
       encodeURIComponent(text);
-
     const r = await fetch(url);
-    const data = await r.json();
-
-    return data[0].map(item => item[0]).join("");
+    const d = await r.json();
+    return d[0].map(x => x[0]).join("");
   } catch {
     return text;
   }
@@ -34,11 +32,8 @@ async function translateToEnglish(text) {
    نسخ السكربت (حل CORS)
 ======================= */
 app.get("/api/raw", async (req, res) => {
-  const url = req.query.url;
-  if (!url) return res.send("");
-
   try {
-    const r = await fetch(url);
+    const r = await fetch(req.query.url);
     const text = await r.text();
     res.send(text);
   } catch {
@@ -50,38 +45,31 @@ app.get("/api/raw", async (req, res) => {
    البحث
 ======================= */
 app.get("/api/search", async (req, res) => {
-  const query = req.query.q;
-  if (!query) return res.json({ results: [] });
+  const q = req.query.q;
+  if (!q) return res.json({ results: [] });
 
   try {
-    const translated = await translateToEnglish(query);
-    const keyword = translated.toLowerCase();
+    const en = await translate(q, "en");
 
-    let scripts = [];
-
-    for (let page = 1; page <= 6; page++) {
-      const r = await fetch(
-        `https://rscripts.net/api/v2/scripts?page=${page}&orderBy=date&sort=desc`
-      );
+    let all = [];
+    for (let i = 1; i <= 6; i++) {
+      const r = await fetch(`https://rscripts.net/api/v2/scripts?page=${i}`);
       const d = await r.json();
-      if (d.scripts) scripts.push(...d.scripts);
+      if (d.scripts) all.push(...d.scripts);
     }
 
-    const results = scripts.filter(s =>
-      s.title?.toLowerCase().includes(keyword) ||
-      s.description?.toLowerCase().includes(keyword)
+    const key = en.toLowerCase();
+    const results = all.filter(
+      s => s.title?.toLowerCase().includes(key) || s.description?.toLowerCase().includes(key)
     );
 
     res.json({
-      original: query,
-      translated,
+      translated: en,
       results: results.slice(0, 20)
     });
   } catch {
-    res.status(500).json({ error: "Search failed" });
+    res.status(500).json({ results: [] });
   }
 });
 
-app.listen(PORT, () => {
-  console.log("✅ KRB Site running on port", PORT);
-});
+app.listen(PORT, () => console.log("✅ KRB Site running on port", PORT));
