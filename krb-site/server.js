@@ -12,9 +12,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, "public"), { maxAge: 0 }));
 app.use(express.json());
 
-/* =======================
-   ترجمة Google (مستقرة)
-======================= */
 async function translate(text, to = "en") {
   try {
     const url =
@@ -28,9 +25,6 @@ async function translate(text, to = "en") {
   }
 }
 
-/* =======================
-   نسخ السكربت (حل CORS)
-======================= */
 app.get("/api/raw", async (req, res) => {
   try {
     const r = await fetch(req.query.url);
@@ -41,9 +35,6 @@ app.get("/api/raw", async (req, res) => {
   }
 });
 
-/* =======================
-   البحث
-======================= */
 app.get("/api/search", async (req, res) => {
   const q = req.query.q;
   if (!q) return res.json({ results: [] });
@@ -59,17 +50,22 @@ app.get("/api/search", async (req, res) => {
     }
 
     const key = en.toLowerCase();
-    const results = all.filter(
-      s => s.title?.toLowerCase().includes(key) || s.description?.toLowerCase().includes(key)
+
+    let results = all.filter(
+      s =>
+        s.title?.toLowerCase().includes(key) ||
+        s.description?.toLowerCase().includes(key)
     );
 
-    res.json({
-      translated: en,
-      results: results.slice(0, 20)
-    });
+    // 🔥 ترتيب حسب المشاهدات
+    results.sort((a, b) => (b.views || 0) - (a.views || 0));
+
+    res.json({ results: results.slice(0, 20) });
   } catch {
     res.status(500).json({ results: [] });
   }
 });
 
-app.listen(PORT, () => console.log("✅ KRB Site running on port", PORT));
+app.listen(PORT, () =>
+  console.log("✅ KRB Site running on port", PORT)
+);
