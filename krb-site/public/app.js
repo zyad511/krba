@@ -1,37 +1,38 @@
-async function search() {
-  const query = document.getElementById("search").value.trim();
+async function searchScripts() {
+  const input = document.getElementById("searchInput");
   const resultsDiv = document.getElementById("results");
-  resultsDiv.innerHTML = "<p>جاري البحث...</p>";
 
-  if (!query) {
-    resultsDiv.innerHTML = "<p>❌ اكتب كلمة للبحث</p>";
-    return;
-  }
+  const query = input.value.trim();
+  if (!query) return;
+
+  resultsDiv.innerHTML = "<p>🔍 Searching...</p>";
 
   try {
     const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
     const data = await res.json();
 
-    if (!data.length) {
-      resultsDiv.innerHTML = "<p>❌ لم يتم العثور على نتائج</p>";
+    resultsDiv.innerHTML = "";
+
+    if (!data.results || data.results.length === 0) {
+      resultsDiv.innerHTML = "<p>❌ No scripts found</p>";
       return;
     }
 
-    resultsDiv.innerHTML = "";
+    data.results.forEach(script => {
+      const card = document.createElement("div");
+      card.className = "card";
 
-    data.forEach(script => {
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
+      card.innerHTML = `
         <h3>${script.title}</h3>
-        <p>${script.description || ""}</p>
-        <img src="${script.image || ''}" alt="${script.title}">
-        <br>
-        <a href="${script.rawScript}" target="_blank">تحميل السكربت</a>
+        <p>${script.description || "No description"}</p>
+        ${script.image ? `<img src="${script.image}" />` : ""}
+        <a href="${script.rawScript}" target="_blank">📜 View Script</a>
       `;
-      resultsDiv.appendChild(div);
+
+      resultsDiv.appendChild(card);
     });
-  } catch (err) {
-    resultsDiv.innerHTML = "<p>❌ حدث خطأ أثناء البحث</p>";
+
+  } catch (e) {
+    resultsDiv.innerHTML = "<p>⚠️ Error fetching scripts</p>";
   }
 }
