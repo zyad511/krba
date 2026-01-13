@@ -9,36 +9,33 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ملفات الموقع الثابتة
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
-// API بحث السكربتات
 app.get("/api/search", async (req, res) => {
-  const q = req.query.q;
+  const q = req.query.q?.toLowerCase();
   if (!q) return res.json([]);
 
   try {
-    const apiUrl = "https://rscripts.net/api/v2/scripts?page=1&orderBy=date&sort=desc";
-    const response = await fetch(apiUrl);
-    const data = await response.json();
+    let allScripts = [];
 
-    // فلترة السكربتات
-    const results = data.scripts.filter(s =>
-      s.title.toLowerCase().includes(q.toLowerCase()) ||
-      (s.description && s.description.toLowerCase().includes(q.toLowerCase()))
+    for (let page = 1; page <= 3; page++) {
+      const apiUrl = `https://rscripts.net/api/v2/scripts?page=${page}&orderBy=date&sort=desc`;
+      const r = await fetch(apiUrl);
+      const d = await r.json();
+      allScripts = allScripts.concat(d.scripts);
+    }
+
+    const results = allScripts.filter(s =>
+      s.title?.toLowerCase().includes(q) ||
+      s.description?.toLowerCase().includes(q)
     );
 
-    res.json(results.slice(0, 15)); // أعلى 15 نتيجة
-  } catch (err) {
-    res.status(500).json({ error: "Search failed" });
+    res.json(results.slice(0, 15));
+  } catch (e) {
+    res.status(500).json({ error: "Search error" });
   }
 });
 
-// صفحة رئيسية
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/index.html"));
-});
-
 app.listen(PORT, () => {
-  console.log(`🌐 KRB Site running on port ${PORT}`);
+  console.log("KRB Site running on port", PORT);
 });
