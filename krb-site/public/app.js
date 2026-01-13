@@ -43,9 +43,18 @@ async function searchScripts() {
   });
 }
 
+/* =======================
+   نسخ فعلي 100%
+======================= */
 async function copyScript(url) {
-  const res = await fetch(url);
+  const res = await fetch(`/api/raw?url=${encodeURIComponent(url)}`);
   const text = await res.text();
+
+  if (!text) {
+    alert("❌ فشل النسخ");
+    return;
+  }
+
   await navigator.clipboard.writeText(text);
   alert("✅ تم نسخ السكربت");
 }
