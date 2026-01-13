@@ -56,9 +56,9 @@ app.get("/api/search", async (req, res) => {
     results.sort((a, b) => (b.views || 0) - (a.views || 0));
 
     res.json({ results: results.slice(0, 24) });
-  } catch (e) {
+  } catch {
     res.json({ results: [] });
   }
 });
 
-app.listen(PORT, () => console.log("✅ Server running"));
+app.listen(PORT, () => console.log("✅ Server Running"));
