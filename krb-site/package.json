@@ -1,7 +1,7 @@
 {
   "name": "krb-site",
   "version": "1.0.0",
-  "description": "KRB Scripts Search Website",
+  "description": "KRB Scripts Search",
   "type": "module",
   "main": "server.js",
   "scripts": {
