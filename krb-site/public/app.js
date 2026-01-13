@@ -7,21 +7,28 @@ function copyLegacy(text) {
   document.body.removeChild(ta);
 }
 
+async function loadPopular() {
+  const r = await fetch("/api/search");
+  const d = await r.json();
+  renderScripts(d.results, "🔥 السكربتات الشائعة");
+}
+
 async function searchScripts() {
   const q = searchInput.value.trim();
-  results.innerHTML = `<div class="loader"></div>`;
-
   const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
   const d = await r.json();
+  renderScripts(d.results, "🔍 نتائج البحث");
+}
 
-  results.innerHTML = "";
+function renderScripts(list, title) {
+  results.innerHTML = `<h2 class="section">${title}</h2>`;
 
-  if (!d.results.length) {
-    results.innerHTML = `<p class="empty">لا توجد نتائج</p>`;
+  if (!list.length) {
+    results.innerHTML += `<p class="empty">لا توجد نتائج</p>`;
     return;
   }
 
-  d.results.forEach(s => {
+  list.forEach(s => {
     const raw = s.rawScript || s.raw || "";
     if (!raw) return;
 
@@ -55,10 +62,12 @@ async function searchScripts() {
         btn.textContent = "❌ فشل النسخ";
         if (fails >= 2) window.open(raw, "_blank");
       }
-
       setTimeout(() => (btn.textContent = "📋 نسخ السكربت"), 1500);
     };
 
     results.appendChild(card);
   });
 }
+
+// 🔥 تحميل الشائع أول ما يفتح الموقع
+window.onload = loadPopular;
