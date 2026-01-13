@@ -5,34 +5,47 @@ async function searchScripts() {
   const query = input.value.trim();
   if (!query) return;
 
-  resultsDiv.innerHTML = "<p>🔍 Searching...</p>";
+  resultsDiv.innerHTML = "<p class='loading'>🔍 جاري البحث...</p>";
 
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
+  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+  const data = await res.json();
 
-    resultsDiv.innerHTML = "";
+  resultsDiv.innerHTML = "";
 
-    if (!data.results || data.results.length === 0) {
-      resultsDiv.innerHTML = "<p>❌ No scripts found</p>";
-      return;
-    }
-
-    data.results.forEach(script => {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      card.innerHTML = `
-        <h3>${script.title}</h3>
-        <p>${script.description || "No description"}</p>
-        ${script.image ? `<img src="${script.image}" />` : ""}
-        <a href="${script.rawScript}" target="_blank">📜 View Script</a>
-      `;
-
-      resultsDiv.appendChild(card);
-    });
-
-  } catch (e) {
-    resultsDiv.innerHTML = "<p>⚠️ Error fetching scripts</p>";
+  if (!data.results || data.results.length === 0) {
+    resultsDiv.innerHTML = "<p>❌ لا توجد نتائج</p>";
+    return;
   }
+
+  data.results.forEach(script => {
+    const card = document.createElement("div");
+    card.className = "script-card";
+
+    const keyStatus = script.key ? "🔑 بمفتاح" : "✅ بدون مفتاح";
+
+    card.innerHTML = `
+      <h3>${script.title}</h3>
+      <p>${script.description || "بدون وصف"}</p>
+
+      ${script.image ? `<img src="${script.image}">` : ""}
+
+      <div class="info">
+        <span>${keyStatus}</span>
+        <span>👁️ ${script.views || 0}</span>
+      </div>
+
+      <button onclick="copyScript('${script.rawScript}')">
+        📋 نسخ السكربت
+      </button>
+    `;
+
+    resultsDiv.appendChild(card);
+  });
+}
+
+async function copyScript(url) {
+  const res = await fetch(url);
+  const text = await res.text();
+  await navigator.clipboard.writeText(text);
+  alert("✅ تم نسخ السكربت");
 }
