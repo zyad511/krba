@@ -10,12 +10,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, "public"), { maxAge: 0 }));
-app.use(express.json());
 
-async function translate(text, to = "en") {
+async function translate(text) {
   try {
     const url =
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${to}&dt=t&q=` +
+      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" +
       encodeURIComponent(text);
     const r = await fetch(url);
     const d = await r.json();
@@ -28,44 +27,38 @@ async function translate(text, to = "en") {
 app.get("/api/raw", async (req, res) => {
   try {
     const r = await fetch(req.query.url);
-    const text = await r.text();
-    res.send(text);
+    const t = await r.text();
+    res.send(t);
   } catch {
     res.send("");
   }
 });
 
 app.get("/api/search", async (req, res) => {
-  const q = req.query.q;
-  if (!q) return res.json({ results: [] });
-
   try {
-    const en = await translate(q, "en");
+    const q = req.query.q;
+    if (!q) return res.json({ results: [] });
 
-    let all = [];
-    for (let i = 1; i <= 6; i++) {
+    const en = await translate(q);
+    let scripts = [];
+
+    for (let i = 1; i <= 8; i++) {
       const r = await fetch(`https://rscripts.net/api/v2/scripts?page=${i}`);
       const d = await r.json();
-      if (d.scripts) all.push(...d.scripts);
+      if (Array.isArray(d.scripts)) scripts.push(...d.scripts);
     }
 
-    const key = en.toLowerCase();
-
-    let results = all.filter(
-      s =>
-        s.title?.toLowerCase().includes(key) ||
-        s.description?.toLowerCase().includes(key)
+    let results = scripts.filter(s =>
+      (s.title || "").toLowerCase().includes(en.toLowerCase()) ||
+      (s.description || "").toLowerCase().includes(en.toLowerCase())
     );
 
-    // 🔥 ترتيب حسب المشاهدات
     results.sort((a, b) => (b.views || 0) - (a.views || 0));
 
-    res.json({ results: results.slice(0, 20) });
-  } catch {
-    res.status(500).json({ results: [] });
+    res.json({ results: results.slice(0, 24) });
+  } catch (e) {
+    res.json({ results: [] });
   }
 });
 
-app.listen(PORT, () =>
-  console.log("✅ KRB Site running on port", PORT)
-);
+app.listen(PORT, () => console.log("✅ Server running"));
