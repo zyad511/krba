@@ -17,33 +17,30 @@ async function searchScripts() {
   results.innerHTML = "";
 
   if (!d.results.length) {
-    results.innerHTML = "<p class='empty'>❌ لا توجد نتائج</p>";
+    results.innerHTML = `<p class="empty">لا توجد نتائج</p>`;
     return;
   }
 
   d.results.forEach(s => {
-    const raw =
-      s.rawScript || s.raw || s.script || "";
-
+    const raw = s.rawScript || s.raw || "";
     if (!raw) return;
-
-    const code = `loadstring(game:HttpGet("${raw}"))()`;
 
     const card = document.createElement("div");
     card.className = "card";
 
     card.innerHTML = `
-      <div class="code-box"><pre>${code}</pre></div>
-      ${s.image || s.image_url ? `<img src="${s.image || s.image_url}">` : ""}
-      <h3>${s.title || "بدون عنوان"}</h3>
-      <p>${s.description || "لا يوجد وصف"}</p>
+      ${s.image ? `<img src="${s.image}">` : ""}
+      <div class="content">
+        <h3>${s.title || "بدون عنوان"}</h3>
+        <p>${s.description || "لا يوجد وصف"}</p>
 
-      <div class="meta">
-        <span>${s.key ? "🔑 Key" : "✅ No Key"}</span>
-        <span>👁 ${s.views || 0}</span>
+        <div class="meta">
+          <span>${s.key ? "🔑 Key" : "✅ No Key"}</span>
+          <span>👁 ${s.views || 0}</span>
+        </div>
+
+        <button>📋 نسخ السكربت</button>
       </div>
-
-      <button>📋 نسخ السكربت</button>
     `;
 
     const btn = card.querySelector("button");
@@ -51,20 +48,15 @@ async function searchScripts() {
 
     btn.onclick = () => {
       try {
-        copyLegacy(code);
+        copyLegacy(`loadstring(game:HttpGet("${raw}"))()`);
         btn.textContent = "✅ تم النسخ";
-        btn.className = "success";
       } catch {
         fails++;
         btn.textContent = "❌ فشل النسخ";
-        btn.className = "error";
         if (fails >= 2) window.open(raw, "_blank");
       }
 
-      setTimeout(() => {
-        btn.textContent = "📋 نسخ السكربت";
-        btn.className = "";
-      }, 1500);
+      setTimeout(() => (btn.textContent = "📋 نسخ السكربت"), 1500);
     };
 
     results.appendChild(card);
