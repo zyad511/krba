@@ -8,16 +8,13 @@
 </head>
 <body>
 
-  <div class="container">
-    <h1>🔎 KRB Scripts</h1>
-    <p class="sub">ابحث بأي لغة – الترجمة تلقائية</p>
+<div class="container">
+  <h1>🔎 KRB Scripts</h1>
+  <input id="searchInput" placeholder="ابحث عن سكربت بأي لغة">
+  <button onclick="searchScripts()">بحث</button>
+  <div id="results"></div>
+</div>
 
-    <input id="searchInput" placeholder="اكتب اسم الماب أو السكربت..." />
-    <button onclick="searchScripts()">بحث</button>
-
-    <div id="results"></div>
-  </div>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
