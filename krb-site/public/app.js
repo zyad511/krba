@@ -1,71 +1,83 @@
+let failCount = {};
+
 async function searchScripts() {
-  const input = document.getElementById("searchInput");
-  const resultsDiv = document.getElementById("results");
-
-  const query = input.value.trim();
-  if (!query) return;
-
-  resultsDiv.innerHTML = "<p class='loading'>🔍 جاري البحث...</p>";
+  const q = document.getElementById("searchInput").value.trim();
+  const results = document.getElementById("results");
+  results.innerHTML = "<p class='loading'>⏳ جاري البحث...</p>";
 
   try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
+    const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    const data = await r.json();
 
-    resultsDiv.innerHTML = "";
+    results.innerHTML = "";
 
     if (!data.results || data.results.length === 0) {
-      resultsDiv.innerHTML = "<p>❌ لا توجد نتائج</p>";
+      results.innerHTML = "<p>❌ لا توجد نتائج</p>";
       return;
     }
 
-    data.results.forEach(script => {
-      const card = document.createElement("div");
-      card.className = "script-card";
+    data.results.forEach(s => {
+      failCount[s.rawScript] = 0;
 
-      const keyStatus = script.key ? "🔑 بمفتاح" : "✅ بدون مفتاح";
-      const rawUrl = encodeURIComponent(script.rawScript || "");
+      const card = document.createElement("div");
+      card.className = "card";
 
       card.innerHTML = `
-        <h3>${script.title}</h3>
-        <p>${script.description || "بدون وصف"}</p>
-        ${script.image ? `<img src="${script.image}" alt="Script Image">` : ""}
-        <div class="info">
-          <span>${keyStatus}</span>
-          <span>👁️ ${script.views || 0}</span>
+        <div class="code-box">
+          <pre>loadstring(game:HttpGet("${s.rawScript}"))()</pre>
         </div>
-        <button data-url="${rawUrl}" class="copy-btn">📋 نسخ السكربت</button>
+
+        ${s.image ? `<img src="${s.image}" alt="Script Image">` : ""}
+
+        <h3>${s.title}</h3>
+        <p>${s.description || "بدون وصف"}</p>
+
+        <div class="meta">
+          <span>${s.key ? "🔑 بمفتاح" : "✅ بدون مفتاح"}</span>
+          <span>👁 ${s.views || 0}</span>
+        </div>
+
+        <button onclick="copyScript('${s.rawScript}', this)">
+          📋 نسخ السكربت
+        </button>
       `;
 
-      resultsDiv.appendChild(card);
-    });
-
-    // إضافة أحداث النسخ لكل زر بعد الإنشاء
-    document.querySelectorAll(".copy-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const url = decodeURIComponent(btn.getAttribute("data-url"));
-        if (!url) {
-          alert("❌ لا يوجد رابط للنسخ");
-          return;
-        }
-
-        btn.textContent = "⏳ جاري النسخ...";
-        try {
-          const res = await fetch(`/api/raw?url=${encodeURIComponent(url)}`);
-          const text = await res.text();
-
-          if (!text) throw new Error("نص فارغ");
-
-          await navigator.clipboard.writeText(text);
-          btn.textContent = "✅ تم النسخ";
-          setTimeout(() => (btn.textContent = "📋 نسخ السكربت"), 1500);
-        } catch {
-          btn.textContent = "❌ فشل النسخ";
-          setTimeout(() => (btn.textContent = "📋 نسخ السكربت"), 1500);
-        }
-      });
+      results.appendChild(card);
     });
 
   } catch {
-    resultsDiv.innerHTML = "<p>❌ حدث خطأ أثناء البحث</p>";
+    results.innerHTML = "<p>❌ حدث خطأ أثناء البحث</p>";
+  }
+}
+
+async function copyScript(url, btn) {
+  try {
+    const r = await fetch(`/api/raw?url=${encodeURIComponent(url)}`);
+    const text = await r.text();
+
+    if (!text) throw "";
+
+    await navigator.clipboard.writeText(text);
+    btn.textContent = "✅ تم النسخ";
+    btn.classList.add("success");
+
+    setTimeout(() => {
+      btn.textContent = "📋 نسخ السكربت";
+      btn.classList.remove("success");
+    }, 1500);
+
+  } catch {
+    failCount[url]++;
+    btn.textContent = "❌ فشل النسخ";
+    btn.classList.add("error");
+
+    if (failCount[url] >= 2) {
+      window.open(url, "_blank");
+    }
+
+    setTimeout(() => {
+      btn.textContent = "📋 نسخ السكربت";
+      btn.classList.remove("error");
+    }, 1500);
   }
 }
