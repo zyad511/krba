@@ -3,24 +3,23 @@
 body {
   margin: 0;
   font-family: Tahoma;
-  color: #fff;
   background: #020617;
-  overflow-x: hidden;
+  color: #fff;
 }
 
 .bg {
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 20%, #22c55e33, transparent 40%),
-    radial-gradient(circle at 80% 80%, #3b82f633, transparent 40%);
-  animation: move 10s infinite alternate;
+    radial-gradient(circle at 20% 20%, #22c55e22, transparent 40%),
+    radial-gradient(circle at 80% 80%, #8b5cf622, transparent 40%);
+  animation: float 12s infinite alternate;
   z-index: -1;
 }
 
-@keyframes move {
+@keyframes float {
   from { transform: scale(1); }
-  to { transform: scale(1.2); }
+  to { transform: scale(1.15); }
 }
 
 .container {
@@ -42,7 +41,7 @@ h1 {
 .search {
   display: flex;
   gap: 10px;
-  margin: 20px 0;
+  margin: 20px 0 40px;
 }
 
 input {
@@ -53,50 +52,41 @@ input {
 }
 
 button {
-  padding: 14px 20px;
+  padding: 14px 22px;
   border-radius: 14px;
   border: none;
-  background: linear-gradient(135deg,#22c55e,#16a34a);
+  background: linear-gradient(135deg,#22c55e,#8b5cf6);
   font-weight: bold;
   cursor: pointer;
 }
 
 #results {
   display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+  grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
   gap: 25px;
 }
 
 .card {
   background: rgba(2,6,23,.85);
   border-radius: 18px;
-  padding: 16px;
-  backdrop-filter: blur(10px);
+  overflow: hidden;
   transition: .4s;
+  backdrop-filter: blur(8px);
 }
 
 .card:hover {
-  transform: translateY(-8px) scale(1.02);
+  transform: translateY(-10px);
   box-shadow: 0 0 40px #22c55e55;
 }
 
-.code-box {
-  border: 1px solid #22c55e;
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 10px;
-}
-
-pre {
-  margin: 0;
-  color: #22c55e;
-  font-size: 12px;
-}
-
-img {
+.card img {
   width: 100%;
-  border-radius: 12px;
-  margin: 10px 0;
+  height: 160px;
+  object-fit: cover;
+}
+
+.content {
+  padding: 15px;
 }
 
 .meta {
@@ -104,12 +94,13 @@ img {
   justify-content: space-between;
   font-size: 13px;
   opacity: .8;
+  margin: 10px 0;
 }
 
 .loader {
   width: 60px;
   height: 60px;
-  border: 6px solid #22c55e33;
+  border: 6px solid #ffffff22;
   border-top: 6px solid #22c55e;
   border-radius: 50%;
   margin: 40px auto;
