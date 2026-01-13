@@ -1,8 +1,8 @@
 body {
-  margin: 0;
-  font-family: Tahoma, Arial;
-  background: radial-gradient(circle at top, #111827, #020617);
+  background: #020617;
   color: #fff;
+  font-family: Tahoma, Arial;
+  margin: 0;
 }
 
 .container {
@@ -13,13 +13,7 @@ body {
 
 h1 {
   text-align: center;
-  margin-bottom: 5px;
-}
-
-.sub {
-  text-align: center;
-  opacity: .7;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 input {
@@ -33,13 +27,22 @@ input {
 
 button {
   width: 100%;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  border: none;
   padding: 14px;
   border-radius: 14px;
-  font-weight: bold;
+  border: none;
   cursor: pointer;
+  font-weight: bold;
+  background: linear-gradient(135deg,#22c55e,#16a34a);
+  transition: .3s;
 }
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(34,197,94,.4);
+}
+
+button.success { background: #16a34a; }
+button.error { background: #dc2626; }
 
 #results {
   margin-top: 25px;
@@ -48,33 +51,54 @@ button {
   gap: 20px;
 }
 
-.script-card {
+.card {
   background: #020617;
-  border-radius: 18px;
+  border-radius: 16px;
   padding: 15px;
-  box-shadow: 0 0 30px rgba(0,0,0,.6);
+  box-shadow: 0 0 25px rgba(0,0,0,.6);
+  transition: .3s;
 }
 
-.script-card img {
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 0 40px rgba(34,197,94,.4);
+}
+
+.code-box {
+  background: #020617;
+  border: 1px solid #22c55e;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+  overflow-x: auto;
+}
+
+pre {
+  margin: 0;
+  font-size: 12px;
+  color: #22c55e;
+}
+
+img {
   width: 100%;
-  border-radius: 14px;
+  border-radius: 12px;
   margin: 10px 0;
 }
 
-.script-card h3 {
+h3 {
   margin: 0 0 6px;
 }
 
-.script-card p {
+p {
   font-size: 14px;
-  opacity: .8;
+  opacity: 0.8;
 }
 
-.info {
+.meta {
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  margin-bottom: 10px;
+  margin: 8px 0;
 }
 
 .loading {
