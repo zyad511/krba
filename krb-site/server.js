@@ -12,26 +12,43 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
-// ترجمة أي لغة → إنجليزي
+/* =======================
+   ترجمة Google (مستقرة)
+======================= */
 async function translateToEnglish(text) {
   try {
-    const res = await fetch("https://libretranslate.de/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        q: text,
-        source: "auto",
-        target: "en"
-      })
-    });
-    const data = await res.json();
-    return data.translatedText || text;
+    const url =
+      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" +
+      encodeURIComponent(text);
+
+    const r = await fetch(url);
+    const data = await r.json();
+
+    return data[0].map(item => item[0]).join("");
   } catch {
     return text;
   }
 }
 
-// البحث
+/* =======================
+   نسخ السكربت (حل CORS)
+======================= */
+app.get("/api/raw", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.send("");
+
+  try {
+    const r = await fetch(url);
+    const text = await r.text();
+    res.send(text);
+  } catch {
+    res.send("");
+  }
+});
+
+/* =======================
+   البحث
+======================= */
 app.get("/api/search", async (req, res) => {
   const query = req.query.q;
   if (!query) return res.json({ results: [] });
@@ -60,7 +77,7 @@ app.get("/api/search", async (req, res) => {
       translated,
       results: results.slice(0, 20)
     });
-  } catch (e) {
+  } catch {
     res.status(500).json({ error: "Search failed" });
   }
 });
