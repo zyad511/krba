@@ -1,5 +1,17 @@
-"type": "module",
-"dependencies": {
-  "express": "^4.18.2",
-  "node-fetch": "^3.3.2"
+{
+  "name": "krb-site",
+  "version": "1.0.0",
+  "description": "KRB Scripts Search Website",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2"
+  }
 }
