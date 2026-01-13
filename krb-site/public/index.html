@@ -1,62 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>KRB Scripts</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- خلفية متحركة -->
-  <div class="bg-glow"></div>
+  <div class="container">
+    <h1>🔎 KRB Scripts</h1>
+    <p class="sub">ابحث بأي لغة – الترجمة تلقائية</p>
 
-  <!-- الهيدر -->
-  <header class="hero">
-    <div class="hero-content">
-      <h1>🚀 KRB Scripts</h1>
-      <p>Find the best Roblox scripts — fast, clean, powerful</p>
+    <input id="searchInput" placeholder="اكتب اسم الماب أو السكربت..." />
+    <button onclick="searchScripts()">بحث</button>
 
-      <div class="search-box">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Search scripts (Blox, Anime, FPS...)"
-          onkeypress="if(event.key === 'Enter') searchScripts()"
-        />
-        <button onclick="searchScripts()">Search</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- إحصائيات -->
-  <section class="stats">
-    <div class="stat">
-      <span>⚡</span>
-      <h3>Fast Search</h3>
-      <p>Live API results</p>
-    </div>
-    <div class="stat">
-      <span>🧠</span>
-      <h3>Smart Filter</h3>
-      <p>Best scripts only</p>
-    </div>
-    <div class="stat">
-      <span>🛡️</span>
-      <h3>Clean UI</h3>
-      <p>No ads, no spam</p>
-    </div>
-  </section>
-
-  <!-- النتائج -->
-  <main>
-    <div id="results" class="results"></div>
-  </main>
-
-  <!-- الفوتر -->
-  <footer>
-    <p>© 2026 KRB — Built with ❤️</p>
-  </footer>
+    <div id="results"></div>
+  </div>
 
   <script src="app.js"></script>
 </body>
