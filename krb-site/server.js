@@ -13,6 +13,44 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
 /* =======================
+   كاش لتسريع البحث
+======================= */
+let cachedScripts = [];
+let lastFetchTime = 0;
+const CACHE_TIME = 60 * 1000; // دقيقة
+
+async function fetchScripts(pages = 4) {
+  const now = Date.now();
+
+  // لو الكاش صالح رجّع مباشرة (سريع جدًا)
+  if (cachedScripts.length && now - lastFetchTime < CACHE_TIME) {
+    return cachedScripts;
+  }
+
+  let scripts = [];
+
+  for (let page = 1; page <= pages; page++) {
+    try {
+      const r = await fetch(
+        `https://rscripts.net/api/v2/scripts?page=${page}&orderBy=views&sort=desc`
+      );
+      if (!r.ok) continue;
+
+      const d = await r.json();
+      if (Array.isArray(d.scripts)) {
+        scripts.push(...d.scripts);
+      }
+    } catch (e) {
+      console.log("Fetch error page", page);
+    }
+  }
+
+  cachedScripts = scripts;
+  lastFetchTime = now;
+  return scripts;
+}
+
+/* =======================
    ترجمة كلمة البحث فقط
 ======================= */
 async function translateToEnglish(text) {
@@ -30,63 +68,41 @@ async function translateToEnglish(text) {
 }
 
 /* =======================
-   جلب السكربتات من rscripts
-======================= */
-async function fetchScripts(pages = 4) {
-  let scripts = [];
-
-  for (let page = 1; page <= pages; page++) {
-    try {
-      const r = await fetch(
-        `https://rscripts.net/api/v2/scripts?page=${page}&orderBy=views&sort=desc`
-      );
-      if (!r.ok) continue;
-
-      const d = await r.json();
-      if (Array.isArray(d.scripts)) {
-        scripts.push(...d.scripts);
-      }
-    } catch {}
-  }
-
-  return scripts;
-}
-
-/* =======================
    البحث + الشائعة
 ======================= */
 app.get("/api/search", async (req, res) => {
   const query = req.query.q?.trim();
 
   try {
-    // 🔥 لو ما في بحث → سكربتات شائعة
-    if (!query) {
-      const scripts = await fetchScripts(3);
+    const scripts = await fetchScripts(4);
 
-      scripts.sort((a, b) => (b.views || 0) - (a.views || 0));
+    // ⭐ سكربتات شائعة (بدون بحث)
+    if (!query) {
+      const popular = [...scripts]
+        .sort((a, b) => (b.views || 0) - (a.views || 0))
+        .slice(0, 20);
 
       return res.json({
         mode: "popular",
-        results: scripts.slice(0, 20)
+        results: popular
       });
     }
 
-    // 🔍 بحث عادي
+    // 🔍 بحث
     const translated = await translateToEnglish(query);
     const keyword = translated.toLowerCase();
 
-    const scripts = await fetchScripts(4);
-
     const results = scripts.filter(s => {
-      const fields = [
-        s.title,
-        s.description,
-        s.title_ar,
-        s.description_ar
-      ];
+      const title = (s.title || "").toLowerCase();
+      const desc = (s.description || "").toLowerCase();
+      const titleAr = (s.title_ar || "").toLowerCase();
+      const descAr = (s.description_ar || "").toLowerCase();
 
-      return fields.some(f =>
-        (f || "").toLowerCase().includes(keyword)
+      return (
+        title.includes(keyword) ||
+        desc.includes(keyword) ||
+        titleAr.includes(keyword) ||
+        descAr.includes(keyword)
       );
     });
 
