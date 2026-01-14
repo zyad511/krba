@@ -23,65 +23,83 @@ async function translateToEnglish(text) {
 
     const r = await fetch(url);
     const data = await r.json();
-    return data[0].map(item => item[0]).join("");
+    return data[0].map(i => i[0]).join("");
   } catch {
     return text;
   }
 }
 
 /* =======================
-   البحث (بدون ترجمة النتائج)
+   جلب السكربتات من rscripts
 ======================= */
-app.get("/api/search", async (req, res) => {
-  const query = req.query.q;
-  if (!query) return res.json({ results: [] });
+async function fetchScripts(pages = 4) {
+  let scripts = [];
 
-  try {
-    // ترجمة كلمة البحث فقط
-    const translated = await translateToEnglish(query);
-    const keyword = translated.toLowerCase();
-
-    let scripts = [];
-
-    // تقليل الصفحات لتحسين السرعة
-    for (let page = 1; page <= 4; page++) {
+  for (let page = 1; page <= pages; page++) {
+    try {
       const r = await fetch(
-        `https://rscripts.net/api/v2/scripts?page=${page}&orderBy=date&sort=desc`
+        `https://rscripts.net/api/v2/scripts?page=${page}&orderBy=views&sort=desc`
       );
-
       if (!r.ok) continue;
 
       const d = await r.json();
       if (Array.isArray(d.scripts)) {
         scripts.push(...d.scripts);
       }
+    } catch {}
+  }
+
+  return scripts;
+}
+
+/* =======================
+   البحث + الشائعة
+======================= */
+app.get("/api/search", async (req, res) => {
+  const query = req.query.q?.trim();
+
+  try {
+    // 🔥 لو ما في بحث → سكربتات شائعة
+    if (!query) {
+      const scripts = await fetchScripts(3);
+
+      scripts.sort((a, b) => (b.views || 0) - (a.views || 0));
+
+      return res.json({
+        mode: "popular",
+        results: scripts.slice(0, 20)
+      });
     }
 
-    // فلترة ذكية (إنجليزي + عربي بدون تعديل العرض)
-    const results = scripts.filter(s => {
-      const title = (s.title || "").toLowerCase();
-      const desc = (s.description || "").toLowerCase();
-      const titleAr = (s.title_ar || "").toLowerCase();
-      const descAr = (s.description_ar || "").toLowerCase();
+    // 🔍 بحث عادي
+    const translated = await translateToEnglish(query);
+    const keyword = translated.toLowerCase();
 
-      return (
-        title.includes(keyword) ||
-        desc.includes(keyword) ||
-        titleAr.includes(keyword) ||
-        descAr.includes(keyword)
+    const scripts = await fetchScripts(4);
+
+    const results = scripts.filter(s => {
+      const fields = [
+        s.title,
+        s.description,
+        s.title_ar,
+        s.description_ar
+      ];
+
+      return fields.some(f =>
+        (f || "").toLowerCase().includes(keyword)
       );
     });
 
-    // ترتيب حسب الأكثر مشاهدة
     results.sort((a, b) => (b.views || 0) - (a.views || 0));
 
     res.json({
+      mode: "search",
       query,
       results: results.slice(0, 20)
     });
   } catch (err) {
-    console.error("SEARCH ERROR:", err);
-    res.status(500).json({ error: "Search failed" });
+    console.error("API ERROR:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
