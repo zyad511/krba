@@ -9,75 +9,86 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, "public"), { maxAge: 0 }));
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json());
 
-async function translate(text, to = "ar") {
-  if (!text) return "";
+/* =======================
+   ترجمة Google (مستقرة)
+======================= */
+async function translateToEnglish(text) {
   try {
     const url =
-      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${to}&dt=t&q=` +
+      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" +
       encodeURIComponent(text);
+
     const r = await fetch(url);
-    const d = await r.json();
-    return d[0].map(x => x[0]).join("");
+    const data = await r.json();
+
+    return data[0].map(item => item[0]).join("");
   } catch {
     return text;
   }
 }
 
-async function translateScript(s) {
-  return {
-    ...s,
-    title_ar: await translate(s.title),
-    description_ar: await translate(s.description)
-  };
-}
-
+/* =======================
+   نسخ السكربت (حل CORS)
+======================= */
 app.get("/api/raw", async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.send("");
+
   try {
-    const r = await fetch(req.query.url);
-    res.send(await r.text());
+    const r = await fetch(url);
+    const text = await r.text();
+    res.send(text);
   } catch {
     res.send("");
   }
 });
 
+/* =======================
+   البحث
+======================= */
 app.get("/api/search", async (req, res) => {
+  const query = req.query.q;
+  if (!query) return res.json({ results: [] });
+
   try {
-    const q = req.query.q || "";
+    const translated = await translateToEnglish(query);
+    const keyword = translated.toLowerCase();
+
     let scripts = [];
 
-    for (let i = 1; i <= 8; i++) {
-      const r = await fetch(`https://rscripts.net/api/v2/scripts?page=${i}`);
+    for (let page = 1; page <= 6; page++) {
+      const r = await fetch(
+        `https://rscripts.net/api/v2/scripts?page=${page}&orderBy=date&sort=desc`
+      );
       const d = await r.json();
-      if (Array.isArray(d.scripts)) scripts.push(...d.scripts);
+      if (d.scripts) scripts.push(...d.scripts);
     }
 
-    // 🔥 سكربتات شائعة
-    if (!q.trim()) {
-      scripts.sort((a, b) => (b.views || 0) - (a.views || 0));
-      const top = scripts.slice(0, 24);
-      const translated = await Promise.all(top.map(translateScript));
-      return res.json({ results: translated });
-    }
-
-    // 🔍 بحث
-    const en = await translate(q, "en");
-
-    let results = scripts.filter(s =>
-      (s.title || "").toLowerCase().includes(en.toLowerCase()) ||
-      (s.description || "").toLowerCase().includes(en.toLowerCase())
+    // البحث يشمل العناوين والوصف بالإنجليزية والعربية
+    const results = scripts.filter(s =>
+      (s.title?.toLowerCase().includes(keyword)) ||
+      (s.description?.toLowerCase().includes(keyword)) ||
+      (s.title_ar?.toLowerCase().includes(keyword)) ||
+      (s.description_ar?.toLowerCase().includes(keyword))
     );
 
+    // ترتيب حسب المشاهدات
     results.sort((a, b) => (b.views || 0) - (a.views || 0));
-    results = results.slice(0, 24);
 
-    const translated = await Promise.all(results.map(translateScript));
-    res.json({ results: translated });
-
-  } catch {
-    res.json({ results: [] });
+    res.json({
+      original: query,
+      translated,
+      results: results.slice(0, 20)
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Search failed" });
   }
 });
 
-app.listen(PORT, () => console.log("✅ Server running"));
+app.listen(PORT, () => {
+  console.log("✅ KRB Site running on port", PORT);
+});
